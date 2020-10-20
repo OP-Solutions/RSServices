@@ -7,13 +7,13 @@ namespace WaybillServiceTest
     public class WaybillTest
     {
         
-        WaybillService _service = new WaybillService();
+        WaybillService _service = new WaybillService("","");
 
 
         [TestMethod]
         public void CheckServiceUserTest()
         {
-            _service.CheckServiceUserAsync("", "").Wait();
+            _service.CheckServiceUserAsync().Wait();
         }
     }
 }

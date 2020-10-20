@@ -5,7 +5,9 @@ using System.Net;
 using System.Net.Cache;
 using System.Net.Http;
 using System.Text;
+using System.Xml;
 using System.Xml.Linq;
+using RSServices.ResponseParams;
 
 namespace RSServices
 {
@@ -18,10 +20,9 @@ namespace RSServices
         }
 
 
-        public static KeyValuePair<XDocument, XElement> GetNewDocument(string requestName)
+        public static KeyValuePair<XDocument, XElement> GetNewDocument(string su, string sp, string requestName)
         {
             var soap = (XNamespace)"http://schemas.xmlsoap.org/soap/envelope/";
-            var myX = (XNamespace) "http://tempuri.org/";
 
             var document = new XDocument();
 
@@ -36,9 +37,20 @@ namespace RSServices
             level1Elem1.Add(level2Elem1);
             level2Elem1.Add(level3Elem1);
 
+            var level4Elem1 = new XElement($"{WaybillService.BaseNameSpace}{su}");
+            var level4Elem2 = new XElement($"{WaybillService.BaseNameSpace}{sp}");
+
+            level3Elem1.Add(level4Elem1);
+            level3Elem1.Add(level4Elem2);
+
             document.Add(level1Elem1);
 
             return new KeyValuePair<XDocument, XElement>(document, level3Elem1);
+        }
+
+        public static CheckServiceUserResponse GetCheckServiceUserResponse(Stream stream)
+        {
+            throw new NotImplementedException();
         }
 
     }
