@@ -8,10 +8,11 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 using RSServices.RequestParams;
 using RSServices.ResponseParams;
+using RSServices.Responses;
 
 namespace RSServices
 {
-    
+
     public class WaybillService
     {
         private const string ContentType = "";
@@ -77,17 +78,14 @@ namespace RSServices
         {
             _su = su;
             _sp = sp;
-        }
-
-
-
-        public WaybillService()
-        {
             _client = new HttpClient
             {
-                BaseAddress = new Uri("http://services.rs.ge/WayBillService/WayBillService.asmx"),
+                BaseAddress = new Uri("http://services.rs.ge/WayBillService/WayBillService.asmx")
             };
         }
+
+
+
 
         /// <summary>
         /// checks if given <paramref name="su"/> and <paramref name="sp"/> is valid
@@ -98,14 +96,21 @@ namespace RSServices
         {
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.CheckServiceUser]);
 
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.CheckServiceUser]}");
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.CheckServiceUser]}");
+            message.Content = Helper.GetXmlBody(pair.Key);
+            message.Method = HttpMethod.Post;
 
-            var response = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
+            var response = await _client.SendAsync(message);
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStreamAsync();
 
-            return Helper.GetCheckServiceUserResponse(content);
+            var serializer = new XmlSerializer(typeof(ResponseBody<CheckServiceUserResponse>));
+
+            var responseBody = (ResponseBody<CheckServiceUserResponse>)serializer.Deserialize(content);
+
+            return responseBody.Body;
         }
 
 
@@ -114,7 +119,7 @@ namespace RSServices
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.CheckServiceUser]);
             var lastChild = pair.Value;
 
-            lastChild.Add(new XElement(BaseNameSpace + "waybill_id") {Value = waybillId.ToString()});
+            lastChild.Add(new XElement(BaseNameSpace + "waybill_id") { Value = waybillId.ToString() });
 
             _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.CheckServiceUser]}");
 
@@ -129,19 +134,19 @@ namespace RSServices
 
         public async Task<string> CloseWaybillTransporterAsync(CloseWaybillTransporterParams closeWTParams)
         {
-            var pair = Helper.GetNewDocument(_su, _sp,_requests[RequestNames.CloseWaybillTransporter]);
+            var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.CloseWaybillTransporter]);
             var lastChild = pair.Value;
 
             lastChild.Add(new XElement(BaseNameSpace + "waybill_id") { Value = closeWTParams.WaybillId.ToString() });
 
-            if(!string.IsNullOrEmpty(closeWTParams.ReceptionInfo))
+            if (!string.IsNullOrEmpty(closeWTParams.ReceptionInfo))
                 lastChild.Add(new XElement(BaseNameSpace + "reception_info") { Value = closeWTParams.ReceptionInfo });
 
-            if(!string.IsNullOrEmpty(closeWTParams.ReceiverInfo))
-                lastChild.Add(new XElement("receiver_info"){Value = closeWTParams.ReceiverInfo});
+            if (!string.IsNullOrEmpty(closeWTParams.ReceiverInfo))
+                lastChild.Add(new XElement("receiver_info") { Value = closeWTParams.ReceiverInfo });
 
-            if(closeWTParams.deliveryDate != null)
-                lastChild.Add(new XElement("delivery_date"){Value = closeWTParams.deliveryDate.ToString()});
+            if (closeWTParams.deliveryDate != null)
+                lastChild.Add(new XElement("delivery_date") { Value = closeWTParams.deliveryDate.ToString() });
 
             _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.CloseWaybillTransporter]}");
 
@@ -158,7 +163,7 @@ namespace RSServices
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.CloseWaybillVd]);
             var lastChild = pair.Value;
 
-            lastChild.Add(new XElement("delivery_date"){Value = deliveryDate.ToString()});
+            lastChild.Add(new XElement(BaseNameSpace + "delivery_date") { Value = deliveryDate.ToString() });
             lastChild.Add(new XElement(BaseNameSpace + "waybill_id") { Value = waybillId.ToString() });
 
             _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.CloseWaybillVd]}");
@@ -188,22 +193,32 @@ namespace RSServices
             return content;
         }
 
-        public async Task CreateServiceUserAsync(CreateServiceUserParams CreateSUParams)
+        public async Task<CreateServiceUserResponse> CreateServiceUserAsync(CreateServiceUserParams CreateSUParams)
         {
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.CreateServiceUser]);
             var lastChild = pair.Value;
 
-            lastChild.Add(new XElement(BaseNameSpace + "user_name") {Value = CreateSUParams.Username});
-            lastChild.Add(new XElement(BaseNameSpace + "user_password") {Value = CreateSUParams.Password});
-            lastChild.Add(new XElement(BaseNameSpace + "ip") {Value = CreateSUParams.Ip});
-            if(!string.IsNullOrEmpty(CreateSUParams.Name))
-                lastChild.Add(new XElement(BaseNameSpace + "name") {Value = CreateSUParams.Name});
+            lastChild.Add(new XElement(BaseNameSpace + "user_name") { Value = CreateSUParams.Username });
+            lastChild.Add(new XElement(BaseNameSpace + "user_password") { Value = CreateSUParams.Password });
+            lastChild.Add(new XElement(BaseNameSpace + "ip") { Value = CreateSUParams.Ip });
+            if (!string.IsNullOrEmpty(CreateSUParams.Name))
+                lastChild.Add(new XElement(BaseNameSpace + "name") { Value = CreateSUParams.Name });
 
-
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.CreateServiceUser]}");
-
-            var request = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.CreateServiceUser]}");
+            message.Content = Helper.GetXmlBody(pair.Key);
+            message.Method = HttpMethod.Post;
+            
+            
+            var request = await _client.SendAsync(message);
             request.EnsureSuccessStatusCode();
+
+            var content = await request.Content.ReadAsStreamAsync();
+
+            var serializer = new XmlSerializer(typeof(ResponseBody<CreateServiceUserResponse>));
+            var respBody = (ResponseBody<CreateServiceUserResponse>)serializer.Deserialize(content);
+
+            return respBody.Body;
         }
 
 
@@ -381,7 +396,7 @@ namespace RSServices
             var lastChild = pair.Value;
 
             lastChild.Add(waybillParams);
-            lastChild.Add(new XElement("is_confirmed"){Value = isConfirmed.ToString()});
+            lastChild.Add(new XElement("is_confirmed") { Value = isConfirmed.ToString() });
 
             _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetBuyersWaybillsEx]}");
 
@@ -433,7 +448,7 @@ namespace RSServices
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.GetNameFromTin]);
             var lastChild = pair.Value;
 
-            lastChild.Add(new XElement("tin") {Value = tin});
+            lastChild.Add(new XElement("tin") { Value = tin });
 
 
             _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetNameFromTin]}");
@@ -488,9 +503,21 @@ namespace RSServices
         }
 
         //
-        public async Task<string> GetServiceUsersAsync()
+        public async Task<string> GetServiceUsersAsync(string userName, string password)
         {
-            throw new NotImplementedException();
+            var document = Helper.GetServiceUsersXDocument(userName, password, _requests[RequestNames.GetServiceUsers]);
+
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetServiceUsers]}");
+            message.Content = Helper.GetXmlBody(document);
+            message.Method = HttpMethod.Post;
+
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
+
+            var response = await request.Content.ReadAsStringAsync();
+
+            return response;
         }
 
         public async Task<string> GetTinFromUnIdAsync(int unId)
