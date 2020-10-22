@@ -58,7 +58,7 @@ namespace RSServices
             {RequestNames.GetTransporterWaybills, "get_transporter_waybills"},
             {RequestNames.GetWaybill, "get_waybill"},
             {RequestNames.GetWaybillByNumber, "get_waybill_by_number"},
-            {RequestNames.GetWaybillGoodsList, "get_waybill_goods_list"}
+            {RequestNames.GetWaybillGoodsList, "get_waybill_goods_list"},
 
         };
 
@@ -88,7 +88,7 @@ namespace RSServices
 
 
         /// <summary>
-        /// checks if given <paramref name="su"/> and <paramref name="sp"/> is valid
+        /// checks if given service user is valid
         /// </summary>
         /// 
         /// <returns>true if su and sp was valid, false otherwise</returns>
@@ -156,7 +156,7 @@ namespace RSServices
             var content = await response.Content.ReadAsStringAsync();
 
             return content;
-        }
+        }   
 
         public async Task<string> CloseWaybillVdAsync(DateTime deliveryDate, int waybillId)
         {
@@ -298,9 +298,14 @@ namespace RSServices
 
             lastChild.Add(new XElement(BaseNameSpace + "id") { Value = id.ToString() });
 
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetAdjustedWaybills]}");
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetAdjustedWaybills]}");
+            message.Content = Helper.GetXmlBody(pair.Key);
+            message.Method = HttpMethod.Post;
+            
+            // _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetAdjustedWaybills]}");
 
-            var response = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
+            var response = await _client.SendAsync(message);
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStringAsync();
@@ -325,18 +330,27 @@ namespace RSServices
             return content;
         }
 
-        public async Task<string> GetAkcizCodesAsync()
+        public async Task<List<GetAkcizCodesResultElem>> GetAkcizCodesAsync()
         {
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.GetAkcizCodes]);
 
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetAkcizCodes]}");
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetAkcizCodes]}");
+            message.Content = Helper.GetXmlBody(pair.Key);
+            message.Method = HttpMethod.Post;
 
-            var response = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
+
+            var response = await _client.SendAsync(message);
             response.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStreamAsync();
 
-            return content;
+            var serializer = new XmlSerializer(typeof(ResponseBody<GetAkcizCodesResponse>));
+            var respBody = (ResponseBody<GetAkcizCodesResponse>)serializer.Deserialize(content);
+
+            var result = respBody.Body.ResponseBody.Result.ListParent.CodesList;
+
+            return result;
         }
 
         public async Task<string> GetBarCodesAsync(string barCode)
@@ -502,8 +516,13 @@ namespace RSServices
             throw new NotImplementedException();
         }
 
-        //
-        public async Task<string> GetServiceUsersAsync(string userName, string password)
+        /// <summary>
+        /// Gets all created service users created on given account 
+        /// </summary>
+        /// <param name="userName"></param>
+        /// <param name="password"></param>
+        /// <returns>List of elements created on this account</returns>
+        public async Task<List<GetServiceUsersResultElem>> GetServiceUsersAsync(string userName, string password)
         {
             var document = Helper.GetServiceUsersXDocument(userName, password, _requests[RequestNames.GetServiceUsers]);
 
@@ -515,9 +534,15 @@ namespace RSServices
             var request = await _client.SendAsync(message);
             request.EnsureSuccessStatusCode();
 
-            var response = await request.Content.ReadAsStringAsync();
+            var response = await request.Content.ReadAsStreamAsync();
 
-            return response;
+            var serializer = new XmlSerializer(typeof(ResponseBody<GetServiceUsersResponse>));
+
+            var respBody = (ResponseBody<GetServiceUsersResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body.ResponseBody.Result.ListParent.UsersList;
+
+            return result;
         }
 
         public async Task<string> GetTinFromUnIdAsync(int unId)
@@ -591,6 +616,7 @@ namespace RSServices
         {
             throw new NotImplementedException();
         }
+
 
         public async Task<string> GetWaybillsAsync()
         {
