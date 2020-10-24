@@ -387,21 +387,31 @@ namespace RSServices
             return content;
         }
 
-        public async Task<string> GetBuyersWaybillsAsync(BuyerWaybillParams waybillParams)
+        public async Task<List<GetBuyersWaybillsResultElem>> GetBuyersWaybillsAsync(BuyerWaybillParams waybillParams)
         {
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.GetBuyersWaybills]);
             var lastChild = pair.Value;
 
             lastChild.Add(waybillParams);
 
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetBuyersWaybills]}");
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetBuyersWaybills]}");
+            message.Content = Helper.GetXmlBody(pair.Key);
+            message.Method = HttpMethod.Post;
 
-            var response = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
+
+            // _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetBuyersWaybills]}");
+
+            var response = await _client.SendAsync(message);
             response.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
+            var content = await response.Content.ReadAsStreamAsync();
 
-            return content;
+            var serializer = new XmlSerializer(typeof(ResponseBody<GetBuyersWaybillsResponse>));
+
+            var respBody = (ResponseBody<GetBuyersWaybillsResponse>)serializer.Deserialize(content);
+
+            return respBody.Body.ResponseBody.Result.ListParent.WaybillList;
         }
 
         public async Task<string> GetBuyersWaybillsExAsync(BuyerWaybillParams waybillParams, int isConfirmed)

@@ -17,8 +17,10 @@ namespace WaybillServiceTest
     public class WaybillTest
     {
 
-
-        WaybillService _service = new WaybillService("", "");
+        //Robotaaa:206322102
+        //Robotaaa
+        //Robota121
+        WaybillService _service = new WaybillService("Robotaaa:206322102", "Robota121");
 
 
         [TestMethod]
@@ -46,6 +48,16 @@ namespace WaybillServiceTest
         {
             var response = await _service.GetAkcizCodesAsync();
         }
+
+
+        [TestMethod]
+        public async Task GetBuyersWaybillsTest()
+        {
+            var response = _service.GetBuyersWaybillsAsync(new BuyerWaybillParams());
+
+        }
+
+
 
         [TestMethod]
         public void SerializeTest()
