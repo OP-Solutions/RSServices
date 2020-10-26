@@ -53,10 +53,16 @@ namespace WaybillServiceTest
         [TestMethod]
         public async Task GetBuyersWaybillsTest()
         {
-            var response = _service.GetBuyersWaybillsAsync(new BuyerWaybillParams());
+            var response = await _service.GetBuyersWaybillsAsync(new BuyerWaybillParams());
 
         }
 
+
+        [TestMethod]
+        public async Task GetBuyerGoodsListTest()
+        {
+            var response = await _service.GetBuyerWaybillGoodsListAsync(null);
+        }
 
 
         [TestMethod]

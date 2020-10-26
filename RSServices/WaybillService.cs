@@ -59,6 +59,27 @@ namespace RSServices
             {RequestNames.GetWaybill, "get_waybill"},
             {RequestNames.GetWaybillByNumber, "get_waybill_by_number"},
             {RequestNames.GetWaybillGoodsList, "get_waybill_goods_list"},
+            {RequestNames.GetWaybillTemplate, "get_waybill_tamplate" },
+            {RequestNames.GetWaybillTemplates, "get_waybill_tamplates" },
+            {RequestNames.GetWaybillTypes, "get_waybill_types" },
+            {RequestNames.GetWaybillUnits, "get_waybill_units" },
+            {RequestNames.GetWaybills, "get_waybills" },
+            {RequestNames.GetWaybillsEx, "get_waybills_ex" },
+            {RequestNames.GetWoodTypes, "get_wood_types" },
+            {RequestNames.IsVatPayer, "is_vat_payer" },
+            {RequestNames.IsVatPayerTin, "is_vat_payer_tin" },
+            {RequestNames.RefWaybill, "ref_waybill" },
+            {RequestNames.RefWaybillVd, "ref_waybill_vd" },
+            {RequestNames.RejectWaybill, "reject_waybill" },
+            {RequestNames.SaveBarCode, "save_bar_code" },
+            {RequestNames.SaveCarNumbers, "save_car_numbers" },
+            {RequestNames.SaveInvoice, "save_invoice" },
+            {RequestNames.SaveWaybillTamplate, "save_waybill_tamplate" },
+            {RequestNames.SaveWaybillTransporter, "save_waybill_transporter" },
+            {RequestNames.SendWaybillVd, "send_waybil_vd" },
+            {RequestNames.SendWaybill, "send_waybill" },
+            {RequestNames.SendWaybillTransporter, "send_waybill_transporter" },
+            {RequestNames.UpdateServiceUser, "update_service_user" }
 
         };
 
@@ -114,24 +135,33 @@ namespace RSServices
         }
 
 
-        public async Task<string> CloseWaybillAsync(int waybillId)
+        public async Task<CloseWaybillResponse> CloseWaybillAsync(int waybillId)
         {
-            var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.CheckServiceUser]);
-            var lastChild = pair.Value;
+            var document = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.CloseWaybill]);
+            var lastChild = document.Value;
 
-            lastChild.Add(new XElement(BaseNameSpace + "waybill_id") { Value = waybillId.ToString() });
+            lastChild.Add(new XElement("waybill_id") { Value = waybillId.ToString() });
 
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.CheckServiceUser]}");
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.CloseWaybill]}");
+            message.Content = Helper.GetXmlBody(document.Key);
+            message.Method = HttpMethod.Post;
 
-            var response = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
-            response.EnsureSuccessStatusCode();
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
+            var response = await request.Content.ReadAsStreamAsync();
 
-            return content;
+            var serializer = new XmlSerializer(typeof(ResponseBody<CloseWaybillResponse>));
+
+            var respBody = (ResponseBody<CloseWaybillResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body;
+
+            return result;
         }
 
-
+        //
         public async Task<string> CloseWaybillTransporterAsync(CloseWaybillTransporterParams closeWTParams)
         {
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.CloseWaybillTransporter]);
@@ -156,41 +186,61 @@ namespace RSServices
             var content = await response.Content.ReadAsStringAsync();
 
             return content;
-        }   
+        }
 
-        public async Task<string> CloseWaybillVdAsync(DateTime deliveryDate, int waybillId)
+        public async Task<CloseWaybillVdResponse> CloseWaybillVdAsync(int waybillId, DateTime? deliveryDate)
         {
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.CloseWaybillVd]);
             var lastChild = pair.Value;
 
-            lastChild.Add(new XElement(BaseNameSpace + "delivery_date") { Value = deliveryDate.ToString() });
             lastChild.Add(new XElement(BaseNameSpace + "waybill_id") { Value = waybillId.ToString() });
 
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.CloseWaybillVd]}");
+            if(deliveryDate != null)
+                lastChild.Add(new XElement(BaseNameSpace + "delivery_date") { Value = deliveryDate.ToString() });
 
-            var response = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
-            response.EnsureSuccessStatusCode();
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.CloseWaybillVd]}");
+            message.Content = Helper.GetXmlBody(pair.Key);
+            message.Method = HttpMethod.Post;
 
-            var content = await response.Content.ReadAsStringAsync();
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
 
-            return content;
+            var response = await request.Content.ReadAsStreamAsync();
+
+            var serializer = new XmlSerializer(typeof(ResponseBody<CloseWaybillVdResponse>));
+
+            var respBody = (ResponseBody<CloseWaybillVdResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body;
+
+            return result;
         }
 
-        public async Task<string> ConfirmWaybillAsync(int waybillId)
+        public async Task<ConfirmWaybillResponse> ConfirmWaybillAsync(int waybillId)
         {
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.ConfirmWaybill]);
             var lastChild = pair.Value;
 
             lastChild.Add(new XElement(BaseNameSpace + "waybill_id") { Value = waybillId.ToString() });
 
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.ConfirmWaybill]}");
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.ConfirmWaybill]}");
+            message.Content = Helper.GetXmlBody(pair.Key);
+            message.Method = HttpMethod.Post;
 
-            var response = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
-            response.EnsureSuccessStatusCode();
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
+            var response = await request.Content.ReadAsStreamAsync();
 
-            return content;
+            var serializer = new XmlSerializer(typeof(ResponseBody<ConfirmWaybillResponse>));
+
+            var respBody = (ResponseBody<ConfirmWaybillResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body;
+
+            return result;
         }
 
         public async Task<CreateServiceUserResponse> CreateServiceUserAsync(CreateServiceUserParams CreateSUParams)
@@ -208,8 +258,8 @@ namespace RSServices
             message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.CreateServiceUser]}");
             message.Content = Helper.GetXmlBody(pair.Key);
             message.Method = HttpMethod.Post;
-            
-            
+
+
             var request = await _client.SendAsync(message);
             request.EnsureSuccessStatusCode();
 
@@ -222,73 +272,113 @@ namespace RSServices
         }
 
 
-        public async Task<string> DelWaybillAsync(int waybillId)
+        public async Task<DelWaybillResponse> DelWaybillAsync(int waybillId)
         {
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.DelWaybill]);
             var lastChild = pair.Value;
 
             lastChild.Add(new XElement(BaseNameSpace + "waybill_id") { Value = waybillId.ToString() });
 
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.DelWaybill]}");
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.DelWaybill]}");
+            message.Content = Helper.GetXmlBody(pair.Key);
+            message.Method = HttpMethod.Post;
 
-            var response = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
-            response.EnsureSuccessStatusCode();
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
+            var response = await request.Content.ReadAsStreamAsync();
 
-            return content;
+            var serializer = new XmlSerializer(typeof(ResponseBody<DelWaybillResponse>));
+
+            var respBody = (ResponseBody<DelWaybillResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body;
+
+            return result;
         }
 
-        public async Task<string> DeleteBarCodeAsync(string barCode)
+        public async Task<DeleteBarCodeResponse> DeleteBarCodeAsync(string barCode)
         {
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.DeleteBarCode]);
             var lastChild = pair.Value;
 
-            lastChild.Add(new XElement(BaseNameSpace + "bar_code") { Value = barCode });
+            if (!string.IsNullOrEmpty(barCode))
+                lastChild.Add(new XElement(BaseNameSpace + "bar_code") { Value = barCode }); 
+            
 
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.DeleteBarCode]}");
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.DeleteBarCode]}");
+            message.Content = Helper.GetXmlBody(pair.Key);
+            message.Method = HttpMethod.Post;
 
-            var response = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
-            response.EnsureSuccessStatusCode();
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
 
-            var content = await response.Content.ReadAsStringAsync();
+            var response = await request.Content.ReadAsStreamAsync();
 
-            return content;
+            var serializer = new XmlSerializer(typeof(ResponseBody<DeleteBarCodeResponse>));
+
+            var respBody = (ResponseBody<DeleteBarCodeResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body;
+
+            return result;
         }
 
-        public async Task<string> DeleteCarNumbersAsync(string carNumber)
+        public async Task<DeleteCarNumbersResponse> DeleteCarNumbersAsync(string carNumber)
         {
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.DeleteCarNumbers]);
             var lastChild = pair.Value;
 
             lastChild.Add(new XElement(BaseNameSpace + "car_number") { Value = carNumber });
 
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.DeleteCarNumbers]}");
 
-            var response = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
-            response.EnsureSuccessStatusCode();
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.DeleteCarNumbers]}");
+            message.Content = Helper.GetXmlBody(pair.Key);
+            message.Method = HttpMethod.Post;
 
-            var content = await response.Content.ReadAsStringAsync();
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
 
-            return content;
+            var response = await request.Content.ReadAsStreamAsync();
+
+            var serializer = new XmlSerializer(typeof(ResponseBody<DeleteCarNumbersResponse>));
+
+            var respBody = (ResponseBody<DeleteCarNumbersResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body;
+
+            return result;
         }
 
 
-        public async Task<string> DeleteWaybillTemplateAsync(int id)
+        public async Task<DeleteWaybillTemplateResponse> DeleteWaybillTemplateAsync(int id)
         {
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.DeleteWaybillTemplate]);
             var lastChild = pair.Value;
 
             lastChild.Add(new XElement(BaseNameSpace + "id") { Value = id.ToString() });
 
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.DeleteWaybillTemplate]}");
 
-            var response = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
-            response.EnsureSuccessStatusCode();
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.DeleteWaybillTemplate]}");
+            message.Content = Helper.GetXmlBody(pair.Key);
+            message.Method = HttpMethod.Post;
 
-            var content = await response.Content.ReadAsStringAsync();
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
 
-            return content;
+            var response = await request.Content.ReadAsStreamAsync();
+
+            var serializer = new XmlSerializer(typeof(ResponseBody<DeleteWaybillTemplateResponse>));
+
+            var respBody = (ResponseBody<DeleteWaybillTemplateResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body;
+
+            return result;
         }
 
         public async Task<string> GetAdjustedWaybillAsync(int id)
@@ -302,7 +392,7 @@ namespace RSServices
             message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetAdjustedWaybills]}");
             message.Content = Helper.GetXmlBody(pair.Key);
             message.Method = HttpMethod.Post;
-            
+
             // _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetAdjustedWaybills]}");
 
             var response = await _client.SendAsync(message);
@@ -375,11 +465,16 @@ namespace RSServices
             var pair = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.GetBuyerWaybillGoodsList]);
             var lastChild = pair.Value;
 
-            lastChild.Add(waybillParams);
+            if (waybillParams != null)
+                lastChild.Add(waybillParams);
 
-            _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetBuyerWaybillGoodsList]}");
 
-            var response = await _client.PostAsync(_client.BaseAddress, Helper.GetXmlBody(pair.Key));
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetBuyerWaybillGoodsList]}");
+            message.Content = Helper.GetXmlBody(pair.Key);
+            message.Method = HttpMethod.Post;
+
+            var response = await _client.SendAsync(message);
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStringAsync();
@@ -399,8 +494,6 @@ namespace RSServices
             message.Content = Helper.GetXmlBody(pair.Key);
             message.Method = HttpMethod.Post;
 
-
-            // _client.DefaultRequestHeaders.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.GetBuyersWaybills]}");
 
             var response = await _client.SendAsync(message);
             response.EnsureSuccessStatusCode();
@@ -643,29 +736,139 @@ namespace RSServices
             throw new NotImplementedException();
         }
 
-        public async Task<string> IsVatPayerAsync()
+        public async Task<IsVatPayerResponse> IsVatPayerAsync(int? unId)
         {
-            throw new NotImplementedException();
+            var document = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.IsVatPayer]);
+            var lastChild = document.Value;
+
+            if (unId != null)
+                lastChild.Add(new XElement("un_id") { Value = unId.ToString() });
+
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.IsVatPayer]}");
+            message.Content = Helper.GetXmlBody(document.Key);
+            message.Method = HttpMethod.Post;
+
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
+
+            var response = await request.Content.ReadAsStreamAsync();
+
+            var serializer = new XmlSerializer(typeof(ResponseBody<IsVatPayerResponse>));
+
+            var respBody = (ResponseBody<IsVatPayerResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body;
+
+            return result;
         }
 
-        public async Task<string> IsVatPayerTinAsync()
+        public async Task<IsVatPayerTinResponse> IsVatPayerTinAsync(string tin)
         {
-            throw new NotImplementedException();
+            var document = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.IsVatPayerTin]);
+            var lastChild = document.Value;
+
+            if (!string.IsNullOrEmpty(tin))
+                lastChild.Add(new XElement("tin") { Value = tin });
+
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.IsVatPayerTin]}");
+            message.Content = Helper.GetXmlBody(document.Key);
+            message.Method = HttpMethod.Post;
+
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
+
+            var response = await request.Content.ReadAsStreamAsync();
+
+            var serializer = new XmlSerializer(typeof(ResponseBody<IsVatPayerTinResponse>));
+
+            var respBody = (ResponseBody<IsVatPayerTinResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body;
+
+            return result;
         }
 
-        public async Task<string> RefWaybillAsync()
+        public async Task<RefWaybillResponse> RefWaybillAsync(int waybillId)
         {
-            throw new NotImplementedException();
+            var document = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.RefWaybill]);
+            var lastChild = document.Value;
+
+            lastChild.Add(new XElement("waybill_id") { Value = waybillId.ToString() });
+
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.RefWaybill]}");
+            message.Content = Helper.GetXmlBody(document.Key);
+            message.Method = HttpMethod.Post;
+
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
+
+            var response = await request.Content.ReadAsStreamAsync();
+
+            var serializer = new XmlSerializer(typeof(ResponseBody<RefWaybillResponse>));
+
+            var respBody = (ResponseBody<RefWaybillResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body;
+
+            return result;
         }
 
-        public async Task<string> RefWaybillVdAsync()
+        public async Task<RefWaybillVdResponse> RefWaybillVdAsync(int waybillId, string comment)
         {
-            throw new NotImplementedException();
+            var document = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.RefWaybillVd]);
+            var lastChild = document.Value;
+
+            lastChild.Add(new XElement("waybill_id") { Value = waybillId.ToString() });
+
+            if (!string.IsNullOrEmpty(comment))
+                lastChild.Add(new XElement("comment") { Value = comment });
+
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.RefWaybillVd]}");
+            message.Content = Helper.GetXmlBody(document.Key);
+            message.Method = HttpMethod.Post;
+
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
+
+            var response = await request.Content.ReadAsStreamAsync();
+
+            var serializer = new XmlSerializer(typeof(ResponseBody<RefWaybillVdResponse>));
+
+            var respBody = (ResponseBody<RefWaybillVdResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body;
+
+            return result;
         }
 
-        public async Task<string> RejectWaybillAsync()
+        public async Task<RejectWaybillResponse> RejectWaybillAsync(int waybillId)
         {
-            throw new NotImplementedException();
+            var document = Helper.GetNewDocument(_su, _sp, _requests[RequestNames.RejectWaybill]);
+            var lastChild = document.Value;
+
+            lastChild.Add(new XElement("waybill_id") { Value = waybillId.ToString() });
+
+            var message = new HttpRequestMessage();
+            message.Headers.Add("SOAPAction", $"{BaseNameSpace}{_requests[RequestNames.RejectWaybill]}");
+            message.Content = Helper.GetXmlBody(document.Key);
+            message.Method = HttpMethod.Post;
+
+            var request = await _client.SendAsync(message);
+            request.EnsureSuccessStatusCode();
+
+            var response = await request.Content.ReadAsStreamAsync();
+
+            var serializer = new XmlSerializer(typeof(ResponseBody<RejectWaybillResponse>));
+
+            var respBody = (ResponseBody<RejectWaybillResponse>)serializer.Deserialize(response);
+
+            var result = respBody.Body;
+
+            return result;
         }
 
         public async Task<string> SaveBarCodeAsync()
